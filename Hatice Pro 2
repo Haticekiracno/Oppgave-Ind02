@@ -1,0 +1,76 @@
+use context essentials2021
+include shared-gdrive(
+  "dcic-2021", 
+  "1wyQZj_L0qqV9Ekgr9au6RX2iqt2Ga8Ep")
+
+include gdrive-sheets 
+include data-source
+ssid = "1RYN0i4Zx_UETVuYacgaGfnFcv4l9zd9toQTTdkQkj7g"
+
+kWh-wealthy-consumer-data =
+load-table: komponent, energi
+source: load-spreadsheet(ssid).sheet-by-name("kWh", true)
+sanitize energi using string-sanitizer 
+end
+
+print(kWh-wealthy-consumer-data)
+
+
+EPUOF = 10
+DTPD = 50
+DPUOF = 30
+
+
+# Energy-per-unit-of-fuel = EPUOF = 10   
+# Distance-travelled-per-day = DTPD = 50
+# Distance-per-unit-of-fuel = DPUOF = 30
+
+
+fun bilEnergi-i-tabellen(): 
+ block:
+    energy-per-day = ((DTPD / DPUOF) * EPUOF)
+   energy-per-day
+ end
+end
+
+fun energi-to-number(str :: String) -> Number: 
+  block:
+  cases(Option) string-to-number(str):
+    | some(a) => a
+      | none => bilEnergi-i-tabellen() 
+  end
+       end
+  
+where:
+  energi-to-number("") is bilEnergi-i-tabellen()
+energi-to-number("48") is 48
+end
+
+nummer = transform-column(kWh-wealthy-consumer-data, "energi", energi-to-number)
+
+print(nummer)
+
+summen = sum(nummer, "energi") 
+
+summen-i-table = table:komponent :: String, energi :: Number
+  row:"summen av lista", summen
+end
+
+row-opprett = get-row(summen-i-table, 0)
+add-row(nummer, row-opprett)
+
+bar-chart(nummer, "komponent", "energi") 
+
+
+fun gjennomsnitt():
+  
+  block:
+    gjennomsnittig = summen + bilEnergi-i-tabellen()
+    print("Gjennomsnittet i kWh er")
+    gjennomsnittig
+  end
+end
+
+gjennomsnitt()
+
+
